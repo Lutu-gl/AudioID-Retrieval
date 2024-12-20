@@ -1,0 +1,62 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Data files (large datasets, audio files, etc.)
+data/
+
+# Results, reports, and generated files
+reports/
+*.log
+*.out
+*.tmp
+
+# Audio processing artifacts
+*.wav
+*.mp3
+*.tar
+*.zip
+
+# Environment and dependency files
+.env
+*.venv/
+*.virtualenv/
+.envrc
+.env.d/
+Pipfile
+Pipfile.lock
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.bak
+*.swp
+*.swo
+*.tmp
+
+# Generated files
+*.npy
+*.pkl
+*.h5
+
+# IDEs and editors
+.vscode/
+.idea/
+*.iml
+
+# GitHub-specific
+*.gitattributes
+*.gitignore
+
+# Output files and images
+*.png
+*.svg
+*.jpg
+*.jpeg
