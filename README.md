@@ -57,5 +57,5 @@ pip install -r requirements.txt
 Download the Dataset
 ```bash
 wget https://cdn.freesound.org/mtg-jamendo/raw_30s/audio/raw_30s_audio-04.tar
-tar -xvf raw_30s_audio-XX.tar -C data/
+tar -xvf raw_30s_audio-04.tar -C data/
 ```
