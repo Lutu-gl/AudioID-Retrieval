@@ -26,14 +26,20 @@ The project is part of the **Information Retrieval course**, focusing on content
 ## **Project Structure**  
 
 ```plaintext
-├── data/                # Raw music database (excluded from Git)
-├── queries/             # Query audio files (10-second segments)
-├── notebooks/           # Jupyter notebooks for analysis and experiments
-├── src/                 # Python scripts for audio processing and matching
-├── reports/             # Tables, figures, and findings
-├── README.md            # Project documentation (this file)
-├── requirements.txt     # Python dependencies
-└── .gitignore           # Files and folders to exclude from Git
+├── data/                  # Raw music database (excluded from Git)
+├── queries/               # Processed query audio files (10-second segments)
+│   ├── random20/          # 20 Randomly music pieces for queries
+│   ├── noise_output/      # Queries with Gaussian noise added (10s long)
+│   ├── coding_output/     # Compressed queries (10s long)
+│   ├── cut_output/        # Segmented and extracted audio cuts (10s long)
+│   └── process_mp3.sh     # Script to process the audio files with noise and coding
+├── notebooks/             # Jupyter notebooks for analysis and experiments
+├── src/                   # Python scripts for audio processing and matching
+├── reports/               # Tables, figures, and findings
+├── README.md              # Project documentation (this file)
+├── requirements.txt       # Python dependencies
+└── .gitignore             # Files and folders to exclude from Git
+
 ```
 
 ---

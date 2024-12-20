@@ -17,8 +17,6 @@ reports/
 *.tmp
 
 # Audio processing artifacts
-*.wav
-*.mp3
 *.tar
 *.zip
 
