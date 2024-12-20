@@ -47,8 +47,8 @@ The project is part of the **Information Retrieval course**, focusing on content
 ## **Setup and Installation**
 Clone the repository and navigate to the project folder:
 ```bash
-git clone <repository-url>
-cd <repository-folder>
+git clone https://github.com/Lutu-gl/AudioID-Retrieval.git
+cd AudioID-Retrieval
 ```
 Install the required Python packages:
 ```bash
