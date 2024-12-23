@@ -32,6 +32,7 @@ The project is part of the **Information Retrieval course**, focusing on content
 │   ├── noise_output/      # Queries with Gaussian noise added (10s long)
 │   ├── coding_output/     # Compressed queries (10s long)
 │   ├── cut_output/        # Segmented and extracted audio cuts (10s long)
+│   ├── moible_output/     # Queries played on a phone in an outdoor environment (10s long)
 │   └── process_mp3.sh     # Script to process the audio files with noise and coding
 ├── notebooks/             # Jupyter notebooks for analysis and experiments
 ├── src/                   # Python scripts for audio processing and matching
