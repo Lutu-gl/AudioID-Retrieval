@@ -35,7 +35,6 @@ The project is part of the **Information Retrieval course**, focusing on content
 │   ├── moible_output/     # Queries played on a phone in an outdoor environment (10s long)
 │   └── process_mp3.sh     # Script to process the audio files with noise and coding
 ├── notebooks/             # Jupyter notebooks for analysis and experiments
-├── src/                   # Python scripts for audio processing and matching
 ├── evaluation/            # CSV files with evaluation results
 ├── README.md              # Project documentation (this file)
 ├── requirements.txt       # Python dependencies
