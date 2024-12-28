@@ -36,7 +36,7 @@ The project is part of the **Information Retrieval course**, focusing on content
 │   └── process_mp3.sh     # Script to process the audio files with noise and coding
 ├── notebooks/             # Jupyter notebooks for analysis and experiments
 ├── src/                   # Python scripts for audio processing and matching
-├── reports/               # Tables, figures, and findings
+├── evaluation/            # CSV files with evaluation results
 ├── README.md              # Project documentation (this file)
 ├── requirements.txt       # Python dependencies
 └── .gitignore             # Files and folders to exclude from Git
