@@ -9,6 +9,10 @@ Inspired by **Avery Wang's Shazam algorithm** (ISMIR 2003), the system processes
 
 The project is part of the **Information Retrieval course**, focusing on content-based audio retrieval and efficient matching strategies.
 
+For a detailed overview of the project, please refer to the notebook `04_audio_retrieval.ipynb` (or the html version `04_audio_retrieval.html`) located in the `notebooks` folder.
+
+For the final report please refer to the html version of the notebook `04_audio_retrieval.html` located in the `notebooks` folder.
+
 ---
 
 ## **Features**  
