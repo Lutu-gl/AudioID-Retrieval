@@ -60,3 +60,9 @@ Download the Dataset
 wget https://cdn.freesound.org/mtg-jamendo/raw_30s/audio/raw_30s_audio-04.tar
 tar -xvf raw_30s_audio-04.tar -C data/
 ```
+
+## **Acknowledgements**
+- Avery Wang: For pioneering the [Shazam algorithm](https://www.ee.columbia.edu/~dpwe/papers/Wang03-shazam.pdf) and audio fingerprinting.
+- Book [Fundamentals of Music Processing](https://link.springer.com/book/10.1007/978-3-030-69808-9)
+- Jupiter notebook for [Audio Identification](https://www.audiolabs-erlangen.de/resources/MIR/FMP/C7/C7S1_AudioIdentification.ipynb)
+- [MTG-Jamendo Dataset](https://mtg.github.io/mtg-jamendo-dataset/)
