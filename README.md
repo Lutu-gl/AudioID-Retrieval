@@ -1,8 +1,6 @@
 # MusicFingerprinting 🎵  
 **An Audio Identification System for Music Retrieval**  
 
----
-
 ## **Overview**  
 This project implements a **music retrieval system** that deals with a specific music retrieval task, namely audio identification.
 
@@ -23,8 +21,6 @@ For the final report please refer to the html version of the notebook `04_audio_
 For a detailed overview of the project, please refer to the notebook `04_audio_retrieval_MS2.ipynb` (or the html version `04_audio_retrieval_MS2.ipynb`) located in the `notebooks` folder.
 (Still in progress)
 
----
-
 ## **Features Milestone 1**  
 - **Audio Query Processing**: Extract 10-second segments and simulate various distortions:
   - Original (unmodified)
@@ -34,7 +30,6 @@ For a detailed overview of the project, please refer to the notebook `04_audio_r
 - **Constellation Maps**: Generate time-frequency representations for efficient matching.  
 - **Matching and Retrieval**: Perform query matching against a music database using precision, recall, and other metrics.  
 
----
 
 ## **Project Structure**  
 
