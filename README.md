@@ -14,12 +14,12 @@ various query preprocessing and distortion conditions.
 
 Inspired by **Avery Wang's Shazam algorithm** (ISMIR 2003), the system processes audio data, generates constellation maps, and matches queries against a database of tracks.
 
-**Milestone 1**\
+#### **Milestone 1:**
 For a detailed overview of the project, please refer to the notebook `04_audio_retrieval_MS1.ipynb` (or the html version `04_audio_retrieval_MS1.html`) located in the `notebooks` folder.
 
 For the final report please refer to the html version of the notebook `04_audio_retrieval_MS1.html` located in the `notebooks` folder.
 
-**Milestone 2**\
+#### **Milestone 2**
 For a detailed overview of the project, please refer to the notebook `04_audio_retrieval_MS2.ipynb` (or the html version `04_audio_retrieval_MS2.ipynb`) located in the `notebooks` folder.
 (Still in progress)
 ---
