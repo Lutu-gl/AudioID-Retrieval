@@ -19,9 +19,10 @@ For a detailed overview of the project, please refer to the notebook `04_audio_r
 
 For the final report please refer to the html version of the notebook `04_audio_retrieval_MS1.html` located in the `notebooks` folder.
 
-#### **Milestone 2**
+#### **Milestone 2:**
 For a detailed overview of the project, please refer to the notebook `04_audio_retrieval_MS2.ipynb` (or the html version `04_audio_retrieval_MS2.ipynb`) located in the `notebooks` folder.
 (Still in progress)
+
 ---
 
 ## **Features Milestone 1**  
