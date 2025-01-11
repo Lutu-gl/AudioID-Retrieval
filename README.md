@@ -4,18 +4,27 @@
 ---
 
 ## **Overview**  
-This project implements a **music retrieval system** capable of identifying audio tracks from short, distorted queries.  
-Inspired by **Avery Wang's Shazam algorithm** (ISMIR 2003), the system processes audio data, generates constellation maps, and matches queries against a database of tracks.  
+This project implements a **music retrieval system** that deals with a specific music retrieval task, namely audio identification.
 
-The project is part of the **Information Retrieval course**, focusing on content-based audio retrieval and efficient matching strategies.
+The project is part of the **Information Retrieval course**, focusing on content-based audio retrieval and efficient matching strategies. 
+It is split up in 2 milestones:
+- **Milestone 1: Audio Processing**: Covers audio processing aspects and measuring retrieval eﬃcacy under
+various query preprocessing and distortion conditions.
+- **Milestone 2: Fingerprint Matching**: Covers fingerprint generation and matching strategies. 
 
-For a detailed overview of the project, please refer to the notebook `04_audio_retrieval.ipynb` (or the html version `04_audio_retrieval.html`) located in the `notebooks` folder.
+Inspired by **Avery Wang's Shazam algorithm** (ISMIR 2003), the system processes audio data, generates constellation maps, and matches queries against a database of tracks.
 
-For the final report please refer to the html version of the notebook `04_audio_retrieval.html` located in the `notebooks` folder.
+**Milestone 1**\
+For a detailed overview of the project, please refer to the notebook `04_audio_retrieval_MS1.ipynb` (or the html version `04_audio_retrieval_MS1.html`) located in the `notebooks` folder.
 
+For the final report please refer to the html version of the notebook `04_audio_retrieval_MS1.html` located in the `notebooks` folder.
+
+**Milestone 2**\
+For a detailed overview of the project, please refer to the notebook `04_audio_retrieval_MS2.ipynb` (or the html version `04_audio_retrieval_MS2.ipynb`) located in the `notebooks` folder.
+(Still in progress)
 ---
 
-## **Features**  
+## **Features Milestone 1**  
 - **Audio Query Processing**: Extract 10-second segments and simulate various distortions:
   - Original (unmodified)
   - Noise (Gaussian noise added)
@@ -23,7 +32,6 @@ For the final report please refer to the html version of the notebook `04_audio_
   - Mobile recording (outdoor playback and re-recording)  
 - **Constellation Maps**: Generate time-frequency representations for efficient matching.  
 - **Matching and Retrieval**: Perform query matching against a music database using precision, recall, and other metrics.  
-- **Scalability**: Extend the system to larger datasets and more efficient hashing approaches in future milestones.
 
 ---
 
@@ -36,11 +44,11 @@ For the final report please refer to the html version of the notebook `04_audio_
 │   ├── coding_output/     # 20 query files compressed (10s long)
 │   ├── cut_output/        # 20 query files with no transformation (10s long)
 │   ├── moible_output/     # 20 query files played on a phone in an outdoor environment (10s long)
-│   ├── mp3ToWav.sh        # Scriped used to convert mp3 files to wav
-│   ├── random10SecCut.sh  # Scriped used to cut 10s segments from the original files
-│   └── transformAudio.sh  # Scriped used to transform the audio files
+│   ├── mp3ToWav.sh        # Script used to convert mp3 files to wav
+│   ├── random10SecCut.sh  # Script used to cut 10s segments from the original files
+│   └── transformAudio.sh  # Script used to transform the audio files
 ├── notebooks/             # Jupyter notebooks for analysis and experiments
-├── evaluation/            # CSV files with evaluation results
+├── evaluation/            # CSV files with evaluation results of Milestone 1
 ├── README.md              # Project documentation (this file)
 ├── requirements.txt       # Python dependencies
 └── .gitignore             # Files and folders to exclude from Git
