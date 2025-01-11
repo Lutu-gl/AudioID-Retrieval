@@ -54,7 +54,6 @@ Thumbs.db
 *.gitignore
 
 # Output files and images
-*.png
 *.svg
 *.jpg
 *.jpeg
