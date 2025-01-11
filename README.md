@@ -32,12 +32,13 @@ For the final report please refer to the html version of the notebook `04_audio_
 ```plaintext
 ├── data/                  # Raw music database (excluded from Git)
 ├── queries/               # Processed query audio files (10-second segments)
-│   ├── random20/          # 20 Randomly music pieces for queries
-│   ├── noise_output/      # Queries with Gaussian noise added (10s long)
-│   ├── coding_output/     # Compressed queries (10s long)
-│   ├── cut_output/        # Segmented and extracted audio cuts (10s long)
-│   ├── moible_output/     # Queries played on a phone in an outdoor environment (10s long)
-│   └── process_mp3.sh     # Script to process the audio files with noise and coding
+│   ├── noise_output/      # 20 query files with Gaussian noise added (10s long)
+│   ├── coding_output/     # 20 query files compressed (10s long)
+│   ├── cut_output/        # 20 query files with no transformation (10s long)
+│   ├── moible_output/     # 20 query files played on a phone in an outdoor environment (10s long)
+│   ├── mp3ToWav.sh        # Scriped used to convert mp3 files to wav
+│   ├── random10SecCut.sh  # Scriped used to cut 10s segments from the original files
+│   └── transformAudio.sh  # Scriped used to transform the audio files
 ├── notebooks/             # Jupyter notebooks for analysis and experiments
 ├── evaluation/            # CSV files with evaluation results
 ├── README.md              # Project documentation (this file)
@@ -45,8 +46,11 @@ For the final report please refer to the html version of the notebook `04_audio_
 └── .gitignore             # Files and folders to exclude from Git
 
 ```
+Please note that if you cloned the repository from GitHub, the `data` folder is excluded from the repository. 
+It is described in the Setup and Installation section how to download the dataset.
 
----
+Also note that in the GitHub there are already the processed and transformed query files in the `queries` folder.
+If you want to generate the query files yourself the scripts in the `queries` folder are helpful.
 
 ## **Setup and Installation**
 Clone the repository and navigate to the project folder:
