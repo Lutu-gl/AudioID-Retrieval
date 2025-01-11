@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# This script cuts 10 seconds from the beginning of each wav file in the random20/wav directory
+# and stores the cut files in the cut_output directory.
+# The start time of the cut is randomly chosen between 0 and 20 seconds
+
 INPUT_DIR="random20/wav"
 OUTPUT_DIR="cut_output"
 
