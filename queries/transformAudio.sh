@@ -1,5 +1,9 @@
 #!/bin/bash
 
+# This script is used for transforming audio files to add noise and apply compression
+# The input files are the cut_output files obtained from the random10SecCut.sh script
+# The output files are stored in the noise_output and coding_output directories
+
 INPUT_DIR="cut_output"
 NOISE_OUTPUT_DIR="noise_output"
 CODING_OUTPUT_DIR="coding_output"
