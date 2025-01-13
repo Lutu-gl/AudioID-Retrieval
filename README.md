@@ -28,7 +28,7 @@ For a detailed overview of the project, please refer to the notebook `04_audio_r
   - Coding (compressed audio with artifacts)
   - Mobile recording (outdoor playback and re-recording)  
 - **Constellation Maps**: Generate time-frequency representations for efficient matching.  
-- **Matching and Retrieval**: Perform query matching against a music database using precision, recall, and other metrics.  
+- **Matching and Retrieval**: Perform query matching against a music database using different metrics.  
 
 
 ## **Project Structure**  
@@ -66,11 +66,13 @@ Install the required Python packages:
 ```bash
 pip install -r requirements.txt
 ```
-Download the Dataset
+Download the Dataset:
 ```bash
 wget https://cdn.freesound.org/mtg-jamendo/raw_30s/audio/raw_30s_audio-04.tar
 tar -xvf raw_30s_audio-04.tar -C data/
 ```
+Now everything is set up and you can start running the notebooks.
+We recommend starting with the `04_audio_retrieval_MS1.ipynb` notebook as it covers the first milestone of the project.
 
 ## **Acknowledgements**
 - Avery Wang: For pioneering the [Shazam algorithm](https://www.ee.columbia.edu/~dpwe/papers/Wang03-shazam.pdf) and audio fingerprinting.
