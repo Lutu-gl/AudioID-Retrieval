@@ -1,10 +1,10 @@
+import hashlib
 import time
 import re
 import os
 import numpy as np
 import librosa
 from scipy import ndimage
-import matplotlib.pyplot as plt
 
 
 def get_files(directory='../data', endswith='.wav'):
@@ -95,18 +95,91 @@ def prepare_query_constellation_maps(file_list, configuration, Fs=22050, N=2048,
         query_maps[file_key]["constellation_map"] = cmap
     return query_maps
 
+def compute_hashes_list_and_index_parallel(files_dict, target_zone, exclusion_zone=5):
+    """
+    Compute hashes for all files' constellation maps and return a list of hashes
+    along with an index for fast lookup.
 
-import os
-import librosa
+    Parameters:
+    - files_dict (dict): Dictionary of files, each containing a "constellation_map" entry.
+                         Example: {"file1.wav": {"constellation_map": <numpy_array>}, ...}.
+    - target_zone (tuple): Tuple (dist_freq, dist_time) defining the rectangle of the target zone.
+                           dist_freq: Range of frequency bins to consider.
+                           dist_time: Range of time frames to consider.
+    - exclusion_zone (int): Minimum time frames to skip after the anchor point.
 
-import hashlib
-import numpy as np
+    Returns:
+    - hashes_list (list): List of all hashes across all files.
+                          Each entry is a tuple (hash_value, track_id, anchor_time).
+    - db_hash_index (dict): Dictionary for fast lookup of database hashes as:
+                            {hash_value: [(track_id, anchor_time), ...]}.
+    """
+
+    def file_processing_for_hashes(file_name, constellation_map, tz, ez):
+        hashes = []
+        df, dt = tz
+        freq_bins, time_bins = np.where(constellation_map == 1)  # Anchor points
+
+        for i, (freq1, time1) in enumerate(zip(freq_bins, time_bins)):
+            for j in range(i + 1, len(freq_bins)):
+                freq2 = freq_bins[j]
+                time2 = time_bins[j]
+                delta_time = time2 - time1
+
+                hs = compute_hash(freq1, freq2, delta_time, df, dt, ez)
+                if hs is not None:
+                    hashes.append((hs, file_name, time1))
+
+        return hashes
+
+    # hashes_list = []
+    db_hash_index = defaultdict(list)  # To store the index for fast lookups
+    finished_hashes = 0
+    print(f"Computing {len(files_dict.items())} hashes...")
+    with ThreadPoolExecutor(max_workers=4) as executor:
+        futures = {
+            executor.submit(file_processing_for_hashes, file_name, constellation_map, target_zone, exclusion_zone): file_name
+            for file_name, constellation_map in files_dict.items()
+        }
+
+        for future in as_completed(futures):
+            file_name = futures[future]
+            finished_hashes += 1
+            print(f"finished hashing {file_name} {finished_hashes}")
+            try:
+                file_hashes = future.result()
+                for hash_value, file_name, anchor_time in file_hashes:
+                    db_hash_index[hash_value].append((file_name, anchor_time))
+            except Exception as e:
+                print(f"Error processing file {file_name}: {e}")
+
+    return db_hash_index
+
 
 def compute_hashes_list_and_index(files_dict, target_zone, exclusion_zone=5):
-#    hashes_list = []
+    """
+    Compute hashes for all files' constellation maps and return a list of hashes
+    along with an index for fast lookup.
+
+    Parameters:
+    - files_dict (dict): Dictionary of files, each containing a "constellation_map" entry.
+                         Example: {"file1.wav": {"constellation_map": <numpy_array>}, ...}.
+    - target_zone (tuple): Tuple (dist_freq, dist_time) defining the rectangle of the target zone.
+                           dist_freq: Range of frequency bins to consider.
+                           dist_time: Range of time frames to consider.
+    - exclusion_zone (int): Minimum time frames to skip after the anchor point.
+
+    Returns:
+    - hashes_list (list): List of all hashes across all files.
+                          Each entry is a tuple (hash_value, track_id, anchor_time).
+    - db_hash_index (dict): Dictionary for fast lookup of database hashes as:
+                            {hash_value: [(track_id, anchor_time), ...]}.
+    """
+    # hashes_list = []
     db_hash_index = defaultdict(list)  # To store the index for fast lookups
     dist_freq, dist_time = target_zone
 
+    finished_hashes = 0
     for file_name, constellation_map in files_dict.items():
         freq_bins, time_bins = np.where(constellation_map == 1)  # Anchor points
 
@@ -116,27 +189,31 @@ def compute_hashes_list_and_index(files_dict, target_zone, exclusion_zone=5):
                 time2 = time_bins[j]
 
                 delta_time = time2 - time1
-                if (
-                    delta_time > exclusion_zone and  # Exclude points within exclusion zone
-                    0 <= (freq2 - freq1) <= dist_freq and  # Frequency constraint
-                    exclusion_zone <= delta_time <= dist_time  # Time constraint
-                ):
-                    # Compute 32-bit hash as described in Wang's paper
-                    hash_value = (
-                        (freq1 & 0x3FF) << 22 |  # 10 bits for freq1
-                        (freq2 & 0x3FF) << 12 |  # 10 bits for freq2
-                        (delta_time & 0xFFF)     # 12 bits for delta_time
-                    )
-                    # Append hash with track_id and anchor_time
-                    #hash_tuple = (np.uint32(hash_value), file_name, time1)
-                    #hashes_list.append(hash_tuple)
 
-                    # Add to the index for fast lookup
+                hash_value = compute_hash(freq1, freq2, delta_time, dist_freq, dist_time, exclusion_zone)
+                if hash_value is not None:
                     db_hash_index[hash_value].append((file_name, time1))
+        finished_hashes += 1
+        print(f"finished hashing {file_name} {finished_hashes}")
 
     return db_hash_index
 
-from collections import defaultdict
+
+def compute_hash(freq1, freq2, delta_time, dist_freq, dist_time, exclusion_zone):
+    if (
+            delta_time > exclusion_zone and  # Exclude points within exclusion zone
+            0 <= (freq2 - freq1) and  # Frequency constraint
+            freq1 + dist_freq / 2 > freq2 > freq1 - dist_freq / 2 and
+            exclusion_zone <= delta_time <= dist_time + exclusion_zone  # Time constraint
+    ):
+        # Compute 32-bit hash as described in Wang's paper
+        hash_value = (
+                (freq1 & 0x3FF) << 22 |  # 10 bits for freq1
+                (freq2 & 0x3FF) << 12 |  # 10 bits for freq2
+                (delta_time & 0xFFF)  # 12 bits for delta_time
+        )
+        return hash_value
+    return None
 
 def compute_hashes_for_query(constellation_map, target_zone, exclusion_zone=5):
     """
@@ -165,21 +242,10 @@ def compute_hashes_for_query(constellation_map, target_zone, exclusion_zone=5):
         for j in range(i + 1, len(freq_bins)):
             freq2 = freq_bins[j]
             time2 = time_bins[j]
-
             delta_time = time2 - time1
-            if (
-                delta_time > exclusion_zone and  # Exclude points within exclusion zone
-                0 <= (freq2 - freq1) <= dist_freq and  # Frequency constraint
-                exclusion_zone <= delta_time <= dist_time  # Time constraint
-            ):
-                # Compute 32-bit hash as described in Wang's paper
-                hash_value = (
-                    (freq1 & 0x3FF) << 22 |  # 10 bits for freq1
-                    (freq2 & 0x3FF) << 12 |  # 10 bits for freq2
-                    (delta_time & 0xFFF)     # 12 bits for delta_time
-                )
-                # Append hash with anchor_time
-                hashes_list.append((np.uint32(hash_value), time1))
+            hash_value = compute_hash(freq1, freq2, delta_time, dist_freq, dist_time, exclusion_zone)
+            if hash_value is not None:
+                hashes_list.append(hash_value)
 
     return hashes_list
 
@@ -221,53 +287,6 @@ def compute_minhash(hashes_list, num_minhashes=100):
         minhash_dict[track_id] = minhashes
 
     return minhash_dict
-
-
-def compute_hashes_for_query(constellation_map, target_zone, exclusion_zone=5):
-    """
-    Compute hashes for a single query's constellation map.
-
-    Parameters:
-    - constellation_map (numpy array): Binary constellation map of the query.
-                                        Example: <numpy_array> with 1s at anchor points.
-    - target_zone (tuple): Tuple (dist_freq, dist_time) defining the rectangle of the target zone.
-                           dist_freq: Range of frequency bins to consider.
-                           dist_time: Range of time frames to consider.
-    - exclusion_zone (int): Minimum time frames to skip after the anchor point.
-
-    Returns:
-    - hashes_list (list): List of hashes for the query.
-                          Each entry is a tuple (hash_value, anchor_time).
-    """
-    hashes_list = []
-    dist_freq, dist_time = target_zone
-
-    # Extract anchor points from the constellation map
-    freq_bins, time_bins = np.where(constellation_map == 1)
-
-    for i, (freq1, time1) in enumerate(zip(freq_bins, time_bins)):
-        # Define the target zone relative to the anchor point
-        for j in range(i + 1, len(freq_bins)):
-            freq2 = freq_bins[j]
-            time2 = time_bins[j]
-
-            delta_time = time2 - time1
-            if (
-                delta_time > exclusion_zone and  # Exclude points within exclusion zone
-                0 <= (freq2 - freq1) <= dist_freq and  # Frequency constraint
-                exclusion_zone <= delta_time <= dist_time  # Time constraint
-            ):
-                # Compute 32-bit hash as described in Wang's paper
-                hash_value = (
-                    (freq1 & 0x3FF) << 22 |  # 10 bits for freq1
-                    (freq2 & 0x3FF) << 12 |  # 10 bits for freq2
-                    (delta_time & 0xFFF)     # 12 bits for delta_time
-                )
-                # Append hash with anchor_time
-                hashes_list.append((np.uint32(hash_value), time1))
-
-    return hashes_list
-
 
 def match_query_to_database(query_hash_list, db_hash_index, threshold=5):
     """
@@ -424,7 +443,7 @@ def load_db_hash_index(file_path='db_hash_index.pkl'):
 configuration = (8, 2) # (κ=8, τ=2)
 (dist_freq, dist_time) = configuration
 
-loadHashesFromFile = True
+loadHashesFromFile = False
 if not loadHashesFromFile:
     database_files = get_files(directory='../data/04', endswith='.mp3')
 
