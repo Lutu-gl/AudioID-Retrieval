@@ -103,25 +103,7 @@ import hashlib
 import numpy as np
 
 def compute_hashes_list_and_index(files_dict, target_zone, exclusion_zone=5):
-    """
-    Compute hashes for all files' constellation maps and return a list of hashes
-    along with an index for fast lookup.
-
-    Parameters:
-    - files_dict (dict): Dictionary of files, each containing a "constellation_map" entry.
-                         Example: {"file1.wav": {"constellation_map": <numpy_array>}, ...}.
-    - target_zone (tuple): Tuple (dist_freq, dist_time) defining the rectangle of the target zone.
-                           dist_freq: Range of frequency bins to consider.
-                           dist_time: Range of time frames to consider.
-    - exclusion_zone (int): Minimum time frames to skip after the anchor point.
-
-    Returns:
-    - hashes_list (list): List of all hashes across all files.
-                          Each entry is a tuple (hash_value, track_id, anchor_time).
-    - db_hash_index (dict): Dictionary for fast lookup of database hashes as:
-                            {hash_value: [(track_id, anchor_time), ...]}.
-    """
-    hashes_list = []
+#    hashes_list = []
     db_hash_index = defaultdict(list)  # To store the index for fast lookups
     dist_freq, dist_time = target_zone
 
@@ -146,13 +128,13 @@ def compute_hashes_list_and_index(files_dict, target_zone, exclusion_zone=5):
                         (delta_time & 0xFFF)     # 12 bits for delta_time
                     )
                     # Append hash with track_id and anchor_time
-                    hash_tuple = (np.uint32(hash_value), file_name, time1)
-                    hashes_list.append(hash_tuple)
+                    #hash_tuple = (np.uint32(hash_value), file_name, time1)
+                    #hashes_list.append(hash_tuple)
 
                     # Add to the index for fast lookup
                     db_hash_index[hash_value].append((file_name, time1))
 
-    return hashes_list, db_hash_index
+    return db_hash_index
 
 from collections import defaultdict
 
@@ -423,17 +405,35 @@ def deep_sizeof(obj, seen=None):
 
     return size
 
+import pickle
+
+def save_db_hash_index(db_hash_index, file_path='db_hash_index.pkl'):
+    """Speichert den db_hash_index in einer Datei."""
+    with open(file_path, 'wb') as f:
+        pickle.dump(db_hash_index, f)
+    print(f"db_hash_index gespeichert in {file_path}")
+
+def load_db_hash_index(file_path='db_hash_index.pkl'):
+    """Lädt den db_hash_index aus einer Datei."""
+    with open(file_path, 'rb') as f:
+        db_hash_index = pickle.load(f)
+    print(f"db_hash_index geladen von {file_path}")
+    return db_hash_index
+
 
 configuration = (8, 2) # (κ=8, τ=2)
 (dist_freq, dist_time) = configuration
 
-database_files = get_files(directory='../data/04', endswith='.mp3')
+loadHashesFromFile = True
+if not loadHashesFromFile:
+    database_files = get_files(directory='../data/04', endswith='.mp3')
 
 #database = prepare_database(database_files, configuration)
-print ("Database preparation starts now")
-time_now = time.time()
-database = prepare_database_parallel(database_files, configuration)
-print ("Database preparation took", time.time()-time_now, "seconds")
+if not loadHashesFromFile:
+    print ("Database preparation starts now")
+    time_now = time.time()
+    database = prepare_database_parallel(database_files, configuration)
+    print ("Database preparation took", time.time()-time_now, "seconds")
 
 print("Query preparation starts now")
 query_list_original = get_files(directory='../queries/cut_output', endswith=".wav")
@@ -450,13 +450,18 @@ print("Query preparation done")
 
 target_zones = [(20,50), (50, 20), (50, 50), (20, 20)]
 
-print("computing hashes for database started")
-time_now = time.time()
-database_hash_list, db_hash_index = compute_hashes_list_and_index(database, (20,50), exclusion_zone=5)
-print("computing hashes for database took", time.time()-time_now, "seconds")
+if not loadHashesFromFile:
+    print("computing hashes for database started")
+    time_now = time.time()
+    db_hash_index = compute_hashes_list_and_index(database, (20,50), exclusion_zone=5)
+    print("computing hashes for database took", time.time()-time_now, "seconds")
 
-
-print("Hashes (Liste):", database_hash_list[:10])
+if not loadHashesFromFile:
+    save_db_hash_index(db_hash_index, 'db_hash_index.pkl')
+else:
+    print ("loading db_hash_index from file")
+    db_hash_index = load_db_hash_index('db_hash_index.pkl')
+    print ("db_hash_index loaded")
 
 fst_query = query_C_original['1009604_cut.wav']['constellation_map']
 query_hash_list = compute_hashes_for_query(fst_query, (20,50), exclusion_zone=5)
