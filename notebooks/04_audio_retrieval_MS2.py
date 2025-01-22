@@ -5,6 +5,7 @@ import os
 import numpy as np
 import librosa
 from scipy import ndimage
+import matplotlib.pyplot as plt
 
 
 def get_files(directory='../data', endswith='.wav'):
@@ -250,43 +251,51 @@ def compute_hashes_for_query(constellation_map, target_zone, exclusion_zone=5):
     return hashes_list
 
 
-def compute_minhash(hashes_list, num_minhashes=100):
+def compute_hashes_for_query(constellation_map, target_zone, exclusion_zone=5):
     """
-    Compute MinHash signatures for a list of hashes.
+    Compute hashes for a single query's constellation map.
 
     Parameters:
-    - hashes_list (list): List of all hashes across all files.
-                          Each entry is a tuple (hash_value, track_id, anchor_time).
-                          Example: [(hash_value, track_id, anchor_time), ...].
-    - num_minhashes (int): Number of MinHash signatures to compute.
+    - constellation_map (numpy array): Binary constellation map of the query.
+                                        Example: <numpy_array> with 1s at anchor points.
+    - target_zone (tuple): Tuple (dist_freq, dist_time) defining the rectangle of the target zone.
+                           dist_freq: Range of frequency bins to consider.
+                           dist_time: Range of time frames to consider.
+    - exclusion_zone (int): Minimum time frames to skip after the anchor point.
 
     Returns:
-    - minhash_dict (dict): Dictionary of MinHash signatures for each track.
-                           Example: {track_id: [minhashes]}.
+    - hashes_list (list): List of hashes for the query.
+                          Each entry is a tuple (hash_value, anchor_time).
     """
-    # Initialize MinHash dictionary
-    minhash_dict = {}
+    hashes_list = []
+    dist_freq, dist_time = target_zone
 
-    # Group hashes by track_id
-    track_hashes = {}
-    for hash_value, track_id, anchor_time in hashes_list:
-        if track_id not in track_hashes:
-            track_hashes[track_id] = []
-        track_hashes[track_id].append(hash_value)
+    # Extract anchor points from the constellation map
+    freq_bins, time_bins = np.where(constellation_map == 1)
 
-    # Compute MinHash signatures for each track
-    for track_id, hashes in track_hashes.items():
-        minhashes = [float('inf')] * num_minhashes
-        for h in hashes:
-            for i in range(num_minhashes):
-                # Use a hash function to generate permutations (simulated by hashlib)
-                hash_func = hashlib.md5(f"{h}_{i}".encode()).hexdigest()
-                permuted_value = int(hash_func, 16)
-                if permuted_value < minhashes[i]:
-                    minhashes[i] = permuted_value
-        minhash_dict[track_id] = minhashes
+    for i, (freq1, time1) in enumerate(zip(freq_bins, time_bins)):
+        # Define the target zone relative to the anchor point
+        for j in range(i + 1, len(freq_bins)):
+            freq2 = freq_bins[j]
+            time2 = time_bins[j]
 
-    return minhash_dict
+            delta_time = time2 - time1
+            if (
+                delta_time > exclusion_zone and  # Exclude points within exclusion zone
+                0 <= (freq2 - freq1) <= dist_freq and  # Frequency constraint
+                exclusion_zone <= delta_time <= dist_time  # Time constraint
+            ):
+                # Compute 32-bit hash as described in Wang's paper
+                hash_value = (
+                    (freq1 & 0x3FF) << 22 |  # 10 bits for freq1
+                    (freq2 & 0x3FF) << 12 |  # 10 bits for freq2
+                    (delta_time & 0xFFF)     # 12 bits for delta_time
+                )
+                # Append hash with anchor_time
+                hashes_list.append((np.uint32(hash_value), time1))
+
+    return hashes_list
+
 
 def match_query_to_database(query_hash_list, db_hash_index, threshold=5):
     """
