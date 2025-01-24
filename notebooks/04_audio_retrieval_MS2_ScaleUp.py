@@ -164,13 +164,76 @@ def prepare_hash_index_parallel(file_list, configuration, target_zone, exclusion
     return db_hash_index
 
 
+from collections import defaultdict
+import re
+import numpy as np
+
+def prepare_hash_index_sequential(file_list, configuration, target_zone, exclusion_zone=5, Fs=22050, N=2048, H=1024, bin_max=128, frame_max=None):
+    """
+    Process files sequentially to create a hash index without storing the constellation maps.
+
+    Parameters:
+    - file_list (list): List of file paths to process.
+    - configuration (tuple): Configuration for constellation map (dist_freq, dist_time).
+    - target_zone (tuple): Target zone for hash computation (dist_freq, dist_time).
+    - exclusion_zone (int): Exclusion zone for anchor points.
+    - Fs, N, H, bin_max, frame_max: Parameters for spectrogram computation.
+
+    Returns:
+    - db_hash_index (dict): Hash index with {hash_value: [(file_name, time1), ...]}.
+    """
+    db_hash_index = defaultdict(list)
+    print(f"Processing {len(file_list)} files sequentially...")
+    progress_counter = 0
+    total_files = len(file_list)
+
+    for file in file_list:
+        try:
+            # Compute spectrogram
+            Y = compute_spectrogram(file, Fs=Fs, N=N, H=H, bin_max=bin_max, frame_max=frame_max)
+            file_key = re.split(r'[\\/]', file)[-1]
+            dist_freq, dist_time = configuration
+
+            # Compute constellation map
+            cmap = compute_constellation_map(Y, dist_freq=dist_freq, dist_time=dist_time)
+
+            # Compute hashes from constellation map
+            freq_bins, time_bins = np.where(cmap == 1)  # Anchor points
+            local_hash_index = defaultdict(list)
+
+            for i, (freq1, time1) in enumerate(zip(freq_bins, time_bins)):
+                for j in range(i + 1, len(freq_bins)):
+                    freq2 = freq_bins[j]
+                    time2 = time_bins[j]
+
+                    delta_time = time2 - time1
+                    hash_value = compute_hash(freq1, freq2, delta_time, target_zone[0], target_zone[1], exclusion_zone)
+                    if hash_value is not None:
+                        local_hash_index[hash_value].append((file_key, time1))
+
+            # Merge the local hash index into the global index
+            for hash_value, entries in local_hash_index.items():
+                db_hash_index[hash_value].extend(entries)
+
+            # Update progress
+            progress_counter += 1
+            if progress_counter % 250 == 0:
+                print(f"Processed {progress_counter}/{total_files} files...")
+
+        except Exception as e:
+            print(f"Error processing file {file}: {e}")
+
+    print("Processing done.")
+    return db_hash_index
+
+
 def scaleUp(db_hash_index, start, end, target_zone, exclusion_zone=5):
     results = {}
 
     new_database_files = get_files_from_tarballs_range(start, end)
 
     start_time = time.perf_counter()
-    new_db_hash_index = prepare_hash_index_parallel(new_database_files, configuration, target_zone, exclusion_zone)
+    new_db_hash_index = prepare_hash_index_sequential(new_database_files, configuration, target_zone, exclusion_zone)
     end_time = time.perf_counter()
     results["time_to_compute_cmaps_and_hashes"] = end_time - start_time
     results["number_of_new_files"] = len(new_database_files)
@@ -178,7 +241,7 @@ def scaleUp(db_hash_index, start, end, target_zone, exclusion_zone=5):
     db_hash_index.update(new_db_hash_index)
     results["size_of_db_hash_index"] = get_sizeof(db_hash_index)
     save_db_hash_index(db_hash_index, f'hashes/db_hash_index_to_tarball_{end}.pkl')
-    results["size_of_db_hash_index_on_disk"] = os.path.getsize(f'hashes/db_hash_index_tz0_{end}.pkl')
+    results["size_of_db_hash_index_on_disk"] = os.path.getsize(f'hashes/db_hash_index_tz_{end}.pkl')
 
     return db_hash_index, results
 
