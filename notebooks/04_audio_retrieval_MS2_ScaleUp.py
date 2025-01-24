@@ -10,6 +10,17 @@ from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import re
 
+
+def get_files(directory='../data', endswith='.wav'):
+    """Function to get all files with the specified extension in a directory and its subdirectories."""
+    files = []
+    for root, _, fs in os.walk(directory):
+        for f in fs:
+            if f.endswith(endswith):
+                files.append(os.path.join(root, f))
+    return files
+
+
 def compute_constellation_map(Y, dist_freq=7, dist_time=7, thresh=0.01):
     """Compute constellation map from a spectrogram Y."""
     result = ndimage.maximum_filter(Y, size=[2 * dist_freq + 1, 2 * dist_time + 1], mode='constant')
