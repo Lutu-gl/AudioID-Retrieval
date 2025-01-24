@@ -7,6 +7,28 @@ import librosa
 from scipy import ndimage
 import matplotlib.pyplot as plt
 
+""" Here are the helper function of Niklas """
+from concurrent.futures import ThreadPoolExecutor
+
+def compute_constellation_map_single(args):
+    """Compute the constellation map for a single file."""
+    filename, dist_freq, dist_time = args
+    spectrogram = compute_spectrogram(filename)  # Perform I/O and computation
+    constellation_map = compute_constellation_map(spectrogram, dist_freq, dist_time)
+    return filename, constellation_map
+
+def compute_constellation_maps(filenames, dist_freq, dist_time):
+    """Compute constellation maps using multithreading."""
+    # Prepare arguments for each file
+    args = [(filename, dist_freq, dist_time) for filename in filenames]
+
+    # Use ThreadPoolExecutor for multithreading
+    with ThreadPoolExecutor() as executor:
+        results = executor.map(compute_constellation_map_single, args)
+
+    # Convert results to a dictionary
+    Cmaps = dict(results)
+    return Cmaps
 
 def get_files(directory='../data', endswith='.wav'):
     """Function to get all files with the specified extension in a directory and its subdirectories."""
@@ -35,7 +57,7 @@ def compute_spectrogram(fn_wav, Fs=22050, N=2048, H=1024, bin_max=128, frame_max
     Y = np.abs(X[:bin_max, :frame_max])
     return Y
 
-def process_file(file, configuration, Fs=22050, N=2048, H=1024, bin_max=128, frame_max=None):
+def process_file_prepare_database(file, configuration, Fs=22050, N=2048, H=1024, bin_max=128, frame_max=None):
     # Compute spectrogram for the current file
     Y = compute_spectrogram(file, Fs=Fs, N=N, H=H, bin_max=bin_max, frame_max=frame_max)
 
@@ -58,7 +80,7 @@ def prepare_database_parallel(file_list, configuration, Fs=22050, N=2048, H=1024
     with ThreadPoolExecutor(max_workers=4) as executor:
         results = list(
             executor.map(
-                lambda file: process_file(file, configuration, Fs, N, H, bin_max, frame_max), file_list
+                lambda file: process_file_prepare_database(file, configuration, Fs, N, H, bin_max, frame_max), file_list
             )
         )
 
@@ -96,7 +118,7 @@ def prepare_query_constellation_maps(file_list, configuration, Fs=22050, N=2048,
         query_maps[file_key]["constellation_map"] = cmap
     return query_maps
 
-def compute_hashes_list_and_index_parallel(files_dict, target_zone, exclusion_zone=5):
+def compute_hashes_list_and_index_parallelTobi(files_dict, target_zone, exclusion_zone=5):
     """
     Compute hashes for all files' constellation maps and return a list of hashes
     along with an index for fast lookup.
@@ -146,7 +168,7 @@ def compute_hashes_list_and_index_parallel(files_dict, target_zone, exclusion_zo
         for future in as_completed(futures):
             file_name = futures[future]
             finished_hashes += 1
-            print(f"finished hashing {file_name} {finished_hashes}")
+            #print(f"finished hashing {file_name} {finished_hashes}")
             try:
                 file_hashes = future.result()
                 for hash_value, file_name, anchor_time in file_hashes:
@@ -203,9 +225,9 @@ def compute_hashes_list_and_index(files_dict, target_zone, exclusion_zone=5):
 def compute_hash(freq1, freq2, delta_time, dist_freq, dist_time, exclusion_zone):
     if (
             delta_time > exclusion_zone and  # Exclude points within exclusion zone
-            0 <= (freq2 - freq1) and  # Frequency constraint
             freq1 + dist_freq / 2 > freq2 > freq1 - dist_freq / 2 and
-            exclusion_zone <= delta_time <= dist_time + exclusion_zone  # Time constraint
+            freq2 >= 0 and
+            exclusion_zone <= delta_time <= dist_time + exclusion_zone
     ):
         # Compute 32-bit hash as described in Wang's paper
         hash_value = (
@@ -246,12 +268,12 @@ def compute_hashes_for_query(constellation_map, target_zone, exclusion_zone=5):
             delta_time = time2 - time1
             hash_value = compute_hash(freq1, freq2, delta_time, dist_freq, dist_time, exclusion_zone)
             if hash_value is not None:
-                hashes_list.append(hash_value)
+                hashes_list.append((np.uint32(hash_value), time1))
 
     return hashes_list
 
 
-def compute_hashes_for_query(constellation_map, target_zone, exclusion_zone=5):
+def compute_hashes_for_querybla(constellation_map, target_zone, exclusion_zone=5):
     """
     Compute hashes for a single query's constellation map.
 
@@ -449,8 +471,54 @@ def load_db_hash_index(file_path='db_hash_index.pkl'):
     return db_hash_index
 
 
+def compute_hashes_list_and_index_parallel(files_dict, target_zone, exclusion_zone=5):
+    db_hash_index = defaultdict(list)  # To store the index for fast lookups
+    dist_freq, dist_time = target_zone
+    finished_hashes = 0
+
+    def process_file(file_name, constellation_map):
+        local_hash_index = defaultdict(list)  # Thread-local storage for hashes
+        freq_bins, time_bins = np.where(constellation_map == 1)  # Anchor points
+
+        for i, (freq1, time1) in enumerate(zip(freq_bins, time_bins)):
+            for j in range(i + 1, len(freq_bins)):
+                freq2 = freq_bins[j]
+                time2 = time_bins[j]
+
+                delta_time = time2 - time1
+
+                hash_value = compute_hash(freq1, freq2, delta_time, dist_freq, dist_time, exclusion_zone)
+                if hash_value is not None:
+                    local_hash_index[hash_value].append((file_name, time1))
+        return local_hash_index
+
+    def merge_results(global_index, local_index):
+        for hash_value, entries in local_index.items():
+            global_index[hash_value].extend(entries)
+
+    with ThreadPoolExecutor() as executor:
+        futures = {
+            executor.submit(process_file, file_name, constellation_map): file_name
+            for file_name, constellation_map in files_dict.items()
+        }
+
+        for future in futures:
+            local_index = future.result()
+            merge_results(db_hash_index, local_index)
+            finished_hashes += 1
+            #print(f"finished hashing {futures[future]} {finished_hashes}")
+
+    return db_hash_index
+
+
 configuration = (8, 2) # (κ=8, τ=2)
 (dist_freq, dist_time) = configuration
+
+print ("Trying function from Niklas:")
+database_files = get_files(directory='../data', endswith='.mp3')
+db_nik = compute_constellation_maps(database_files, dist_freq, dist_time)
+print("done")
+
 
 loadHashesFromFile = False
 if not loadHashesFromFile:
@@ -476,13 +544,23 @@ query_C_coding = prepare_query_constellation_maps(query_list_coding, configurati
 query_C_mobile = prepare_query_constellation_maps(query_list_mobile, configuration)
 print("Query preparation done")
 
-target_zones = [(20,50), (50, 20), (50, 50), (20, 20)]
+target_zones = [(5,10), (10, 5), (10, 10), (5, 5)]
 
 if not loadHashesFromFile:
     print("computing hashes for database started")
     time_now = time.time()
-    db_hash_index = compute_hashes_list_and_index(database, (20,50), exclusion_zone=5)
+    db_hash_index = compute_hashes_list_and_index(database, target_zones[0], exclusion_zone=5)
     print("computing hashes for database took", time.time()-time_now, "seconds")
+
+    print("computing hashes for database started parallel")
+    time_now = time.time()
+    #db_hash_index = compute_hashes_list_and_index_parallel(database, target_zones[0], exclusion_zone=5)
+    print("computing hashes for database parallel took", time.time()-time_now, "seconds")
+
+    print("computing hashes for database started parallel Tobi")
+    time_now = time.time()
+    #db_hash_index = compute_hashes_list_and_index_parallelTobi(database, target_zones[0], exclusion_zone=5)
+    print("computing hashes for database parallel took Tobi", time.time()-time_now, "seconds")
 
 if not loadHashesFromFile:
     save_db_hash_index(db_hash_index, 'db_hash_index.pkl')
@@ -492,7 +570,7 @@ else:
     print ("db_hash_index loaded")
 
 fst_query = query_C_original['1009604_cut.wav']['constellation_map']
-query_hash_list = compute_hashes_for_query(fst_query, (20,50), exclusion_zone=5)
+query_hash_list = compute_hashes_for_query(fst_query, target_zones[0], exclusion_zone=5)
 
 # Matching durchführen
 time_now = time.time()
@@ -522,3 +600,43 @@ if result["track_id"]:
 else:
     print("No significant match found.")
 
+
+
+# temporary save
+def compute_minhash(hashes_list, num_minhashes=100):
+    """
+    Compute MinHash signatures for a list of hashes.
+
+    Parameters:
+    - hashes_list (list): List of all hashes across all files.
+                          Each entry is a tuple (hash_value, track_id, anchor_time).
+                          Example: [(hash_value, track_id, anchor_time), ...].
+    - num_minhashes (int): Number of MinHash signatures to compute.
+
+    Returns:
+    - minhash_dict (dict): Dictionary of MinHash signatures for each track.
+                           Example: {track_id: [minhashes]}.
+    """
+    # Initialize MinHash dictionary
+    minhash_dict = {}
+
+    # Group hashes by track_id
+    track_hashes = {}
+    for hash_value, track_id, anchor_time in hashes_list:
+        if track_id not in track_hashes:
+            track_hashes[track_id] = []
+        track_hashes[track_id].append(hash_value)
+
+    # Compute MinHash signatures for each track
+    for track_id, hashes in track_hashes.items():
+        minhashes = [float('inf')] * num_minhashes
+        for h in hashes:
+            for i in range(num_minhashes):
+                # Use a hash function to generate permutations (simulated by hashlib)
+                hash_func = hashlib.md5(f"{h}_{i}".encode()).hexdigest()
+                permuted_value = int(hash_func, 16)
+                if permuted_value < minhashes[i]:
+                    minhashes[i] = permuted_value
+        minhash_dict[track_id] = minhashes
+
+    return minhash_dict
