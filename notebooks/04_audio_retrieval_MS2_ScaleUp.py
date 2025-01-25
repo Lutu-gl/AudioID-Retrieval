@@ -16,7 +16,7 @@ def get_files(directory='../data', endswith='.wav'):
     files = []
     for root, _, fs in os.walk(directory):
         for f in fs:
-            if f.endswith(endswith):
+            if f.endswith(endswith) and not f.startswith('.'):
                 files.append(os.path.join(root, f))
     return files
 
@@ -232,6 +232,7 @@ def scaleUp(db_hash_index, start, end, target_zone, exclusion_zone=5):
 
     #new_database_files = get_files_from_tarballs_range(start, end)
     new_database_files = get_files(directory=f'../data/test', endswith='.mp3')
+    new_database_files = get_files(directory=f'E:\\data\\test', endswith='.mp3')
 
     start_time = time.perf_counter()
     new_db_hash_index = prepare_hash_index_parallel(new_database_files, configuration, target_zone, exclusion_zone)
