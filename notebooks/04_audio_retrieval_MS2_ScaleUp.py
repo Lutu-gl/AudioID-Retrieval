@@ -230,10 +230,11 @@ def prepare_hash_index_sequential(file_list, configuration, target_zone, exclusi
 def scaleUp(db_hash_index, start, end, target_zone, exclusion_zone=5):
     results = {}
 
-    new_database_files = get_files_from_tarballs_range(start, end)
+    #new_database_files = get_files_from_tarballs_range(start, end)
+    new_database_files = get_files(directory=f'../data/test', endswith='.mp3')
 
     start_time = time.perf_counter()
-    new_db_hash_index = prepare_hash_index_sequential(new_database_files, configuration, target_zone, exclusion_zone)
+    new_db_hash_index = prepare_hash_index_parallel(new_database_files, configuration, target_zone, exclusion_zone)
     end_time = time.perf_counter()
     results["time_to_compute_cmaps_and_hashes"] = end_time - start_time
     results["number_of_new_files"] = len(new_database_files)
@@ -241,7 +242,7 @@ def scaleUp(db_hash_index, start, end, target_zone, exclusion_zone=5):
     db_hash_index.update(new_db_hash_index)
     results["size_of_db_hash_index"] = get_sizeof(db_hash_index)
     save_db_hash_index(db_hash_index, f'hashes/db_hash_index_to_tarball_{end}.pkl')
-    results["size_of_db_hash_index_on_disk"] = os.path.getsize(f'hashes/db_hash_index_tz_{end}.pkl')
+    results["size_of_db_hash_index_on_disk"] = os.path.getsize(f'hashes/db_hash_index_to_tarball_{end}.pkl')
 
     return db_hash_index, results
 
@@ -257,16 +258,29 @@ def save_results_to_table_scale_up(results):
     - summary_df (pd.DataFrame): Dataframe summarizing the results for each scale-up step.
     """
     summary_data = []
-    for step, result in results.items():
-        summary_data.append({
-            "Step": step,
-            "Time to Compute Constellation Maps and Hashes (s)": result["time_to_compute_cmaps_and_hashes"],
-            "Number of New Files": result["number_of_new_files"],
-            "Size of DB Hash Index (MB)": result["size_of_db_hash_index"] / (1024 ** 2),
-            "Size of DB Hash Index on Disk (MB)": result["size_of_db_hash_index_on_disk"] / (1024 ** 2)
-        })
+
+    # Füge jedes Key-Value-Paar als separate Zeile hinzu
+    summary_data.append({
+        "Metric": "Time to Compute Constellation Maps and Hashes (s)",
+        "Value": results["time_to_compute_cmaps_and_hashes"]
+    })
+    summary_data.append({
+        "Metric": "Number of New Files",
+        "Value": int(results["number_of_new_files"])
+    })
+    summary_data.append({
+        "Metric": "Size of DB Hash Index (MB)",
+        "Value": results["size_of_db_hash_index"] / (1024 ** 2)
+    })
+    summary_data.append({
+        "Metric": "Size of DB Hash Index on Disk (MB)",
+        "Value": results["size_of_db_hash_index_on_disk"] / (1024 ** 2)
+    })
+
+    # Erstelle das DataFrame
     summary_df = DataFrame(summary_data)
     return summary_df
+
 
 configuration = (8, 2) # (κ=8, τ=2)
 (dist_freq, dist_time) = configuration
@@ -274,6 +288,8 @@ target_zones = [(5,10), (10, 5), (10, 10), (5, 5)]
 
 
 
-index_scale_up, result = scaleUp({}, 0, 9, target_zones[0])
-print(save_results_to_table_scale_up(result))
+index_scale_up, results = scaleUp({}, 0, 0, target_zones[0])
+#print(results)
+#print(results.items())
+print(save_results_to_table_scale_up(results))
 
