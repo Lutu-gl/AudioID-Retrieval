@@ -18,8 +18,9 @@ For a detailed overview of the project, please refer to the notebook `04_audio_r
 For the final report please refer to the html version of the notebook `04_audio_retrieval_MS1.html` located in the `notebooks` folder.
 
 #### **Milestone 2:**
-For a detailed overview of the project, please refer to the notebook `04_audio_retrieval_MS2.ipynb` (or the html version `04_audio_retrieval_MS2.ipynb`) located in the `notebooks` folder.
-(Still in progress)
+For a detailed overview of the project, please refer to the notebook `04_audio_retrieval_MS2.ipynb` (or the html version `04_audio_retrieval_MS2.html`) located in the `notebooks` folder.
+
+For the final report please refer to the html version of the notebook `04_audio_retrieval_MS2.html` located in the `notebooks` folder.
 
 ## **Features Milestone 1**  
 - **Audio Query Processing**: Extract 10-second segments and simulate various distortions:
@@ -30,6 +31,10 @@ For a detailed overview of the project, please refer to the notebook `04_audio_r
 - **Constellation Maps**: Generate time-frequency representations for efficient matching.  
 - **Matching and Retrieval**: Perform query matching against a music database using different metrics.  
 
+## **Features Milestone 2**
+- **Computing Fingerprint**: Generate fingerprints for the database and query audio files (hash-based approach) and finding the best target zone for our use case.
+- **Matching and Retrieval**: Perform query matching against the database using the fingerprints and evaluate the performance.
+- **Scaling up**: Evaluate the performance of the system with a larger database and query set.
 
 ## **Project Structure**  
 
@@ -44,7 +49,8 @@ For a detailed overview of the project, please refer to the notebook `04_audio_r
 │   ├── random10SecCut.sh  # Script used to cut 10s segments from the original files
 │   └── transformAudio.sh  # Script used to transform the audio files
 ├── notebooks/             # Jupyter notebooks for analysis and experiments
-├── evaluation/            # CSV files with evaluation results of Milestone 1
+│   └── hashes/            # Hashes computed for database files of Milestone 2 task 1 and 2
+├── evaluation/            # CSV files with evaluation results for Milestone 1 and 2
 ├── README.md              # Project documentation (this file)
 ├── requirements.txt       # Python dependencies
 └── .gitignore             # Files and folders to exclude from Git
@@ -79,3 +85,4 @@ We recommend starting with the `04_audio_retrieval_MS1.ipynb` notebook as it cov
 - Book [Fundamentals of Music Processing](https://link.springer.com/book/10.1007/978-3-030-69808-9)
 - Jupiter notebook for [Audio Identification](https://www.audiolabs-erlangen.de/resources/MIR/FMP/C7/C7S1_AudioIdentification.ipynb)
 - [MTG-Jamendo Dataset](https://mtg.github.io/mtg-jamendo-dataset/)
+- This project was developed as part of the Introduction to Information Retrieval course at the TU Vienna. 
