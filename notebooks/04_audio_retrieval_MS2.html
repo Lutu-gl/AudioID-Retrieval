@@ -7519,7 +7519,7 @@ a.anchor-link {
 <h1 id="Audio-Retrieval-MS2">Audio Retrieval MS2<a class="anchor-link" href="#Audio-Retrieval-MS2">¶</a></h1><p>This project focuses on audio retrieval using constellation maps, inspired by prior work on audio fingerprinting and matching (Please see the <code>README.md</code> in the Acknowledgements/Credits section for more information). Milestone 2 builds on the work done in Milestone 1. In Milestone 1 we used a naive approach to find matches between queries and the database. In Milestone 2 we will optimize the system to handle a larger dataset and queries.</p>
 <ol>
 <li><p>First, following the work of Wang, we will implement a function that generates hashes for the database and queries. These hashes will be used to find matches between the queries and the database. We will then optimize the system to handle a larger dataset and queries. Hashes are much faster and could yield a better result than the naive approach we used in Milestone 1.
-The hashing is done with a target zone approach. We will define 4 different target zones and compare the storage requirements for each.</p>
+The hashing is done with a target zone approach. For a detailed explanation of how the hashes work I recommend consulting Wangs paper <a href="https://www.ee.columbia.edu/~dpwe/papers/Wang03-shazam.pdf">An Industrial-Strength Audio Search Algorithm</a>. We will define 4 different target zones and compare the storage requirements for each.</p>
 </li>
 <li><p>We will redo the evaluation of the queries done in Milestone 1. We will compare retrieval performance (efficiency,
 query times) for all four configurations and all types of queries individually and combined.</p>
@@ -8033,7 +8033,6 @@ First let's define the target zones. Target zones are used to define the range o
 
 <span class="kn">import</span> <span class="nn">sys</span>
 <span class="k">def</span> <span class="nf">get_sizeof</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">"""Calculates the size of an object recursively."""</span>
     <span class="k">return</span> <span class="n">asizeof</span><span class="o">.</span><span class="n">asizeof</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -8938,19 +8937,6 @@ Attention: In total the dataset is around 100GB large.</p>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
 <div class="highlight hl-ipython3"><pre><span></span><span class="k">def</span> <span class="nf">prepare_hash_index_parallel</span><span class="p">(</span><span class="n">file_list</span><span class="p">,</span> <span class="n">configuration</span><span class="p">,</span> <span class="n">target_zone</span><span class="p">,</span> <span class="n">Fs</span><span class="o">=</span><span class="mi">22050</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="mi">2048</span><span class="p">,</span> <span class="n">H</span><span class="o">=</span><span class="mi">1024</span><span class="p">,</span> <span class="n">bin_max</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span> <span class="n">frame_max</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">"""</span>
-<span class="sd">    Process files in parallel to create a hash index without storing the constellation maps.</span>
-
-<span class="sd">    Parameters:</span>
-<span class="sd">    - file_list (list): List of file paths to process.</span>
-<span class="sd">    - configuration (tuple): Configuration for constellation map (dist_freq, dist_time).</span>
-<span class="sd">    - target_zone (tuple): Target zone for hash computation (dist_freq, dist_time).</span>
-<span class="sd">    - exclusion_zone (int): Exclusion zone for anchor points.</span>
-<span class="sd">    - Fs, N, H, bin_max, frame_max: Parameters for spectrogram computation.</span>
-
-<span class="sd">    Returns:</span>
-<span class="sd">    - db_hash_index (dict): Hash index with {hash_value: [(file_name, time1), ...]}.</span>
-<span class="sd">    """</span>
     <span class="n">db_hash_index</span> <span class="o">=</span> <span class="n">defaultdict</span><span class="p">(</span><span class="nb">list</span><span class="p">)</span>
     <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Processing </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">file_list</span><span class="p">)</span><span class="si">}</span><span class="s2"> files in parallel..."</span><span class="p">)</span>
     <span class="n">progress_counter</span> <span class="o">=</span> <span class="mi">0</span> 
@@ -9232,7 +9218,7 @@ Score: 483
 <p>Next we will:</p>
 <ol>
 <li>Scale up the database by incrementally adding 10 tarballs at a time from the MTG-Jamendo dataset.</li>
-<li>Use the best-performing configuration (<code>target_zone 0</code>) for hash generation and matching.</li>
+<li>Use the best-performing configuration (<code>target_zone 3</code>) for hash generation and matching.</li>
 <li>Measure the memory usage of the database and store index files after every addition.</li>
 <li>Report on performance with increasing database size, including query times and accuracy.</li>
 </ol>
@@ -9245,38 +9231,20 @@ Score: 483
 <li>Evaluate performance after each increment.</li>
 </ul>
 <p>This process will provide insights into the scalability of the system. Let's do it.</p>
+<p>(Please note that the output for some cells is not shown here as it was done on different days, and it would fill up the space with unnecessary information.)</p>
 </div>
 </div>
 </div>
-</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell" id="cell-id=2d0fdb68f5fd2232">
+</div><div class="jp-Cell jp-CodeCell jp-Notebook-cell jp-mod-noOutputs" id="cell-id=2d0fdb68f5fd2232">
 <div class="jp-Cell-inputWrapper" tabindex="0">
 <div class="jp-Collapser jp-InputCollapser jp-Cell-inputCollapser">
 </div>
 <div class="jp-InputArea jp-Cell-inputArea">
-<div class="jp-InputPrompt jp-InputArea-prompt">In [81]:</div>
+<div class="jp-InputPrompt jp-InputArea-prompt">In [ ]:</div>
 <div class="jp-CodeMirrorEditor jp-Editor jp-InputArea-editor" data-type="inline">
 <div class="cm-editor cm-s-jupyter">
-<div class="highlight hl-ipython3"><pre><span></span><span class="n">result</span> <span class="o">=</span> <span class="n">scaleUp</span><span class="p">(</span><span class="mi">9</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="n">target_zones</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+<div class="highlight hl-ipython3"><pre><span></span><span class="n">result</span> <span class="o">=</span> <span class="n">scaleUp</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">9</span><span class="p">,</span> <span class="n">target_zones</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
 </pre></div>
-</div>
-</div>
-</div>
-</div>
-<div class="jp-Cell-outputWrapper">
-<div class="jp-Collapser jp-OutputCollapser jp-Cell-outputCollapser">
-</div>
-<div class="jp-OutputArea jp-Cell-outputArea">
-<div class="jp-OutputArea-child">
-<div class="jp-OutputPrompt jp-OutputArea-prompt"></div>
-<div class="jp-RenderedText jp-OutputArea-output" data-mime-type="text/plain" tabindex="0">
-<pre>Processing tarball 09...
-Processing 519 files in parallel...
-Processed 250/519 files...
-Processed 500/519 files...
-Processing done.
-saved db_hash_index in hashes/db_hash_index_to_tarball_09.pkl
-Total time to scale up: 77.66 seconds
-</pre>
 </div>
 </div>
 </div>
@@ -11075,7 +11043,7 @@ Total Retrieval Experiments Time: 320.41 seconds
 </div>
 <div class="jp-InputArea jp-Cell-inputArea"><div class="jp-InputPrompt jp-InputArea-prompt">
 </div><div class="jp-RenderedHTMLCommon jp-RenderedMarkdown jp-MarkdownOutput" data-mime-type="text/markdown">
-<p>Since the last evaluation took 1.5 hours in total we will now do it with four queries (one for each type) because otherwise it would take too long on the setup:</p>
+<p>Since the last evaluation of range 0-49 took 1.5 hours in total we will now do it with four queries (one for each type) because otherwise it would take too long on our setup:</p>
 </div>
 </div>
 </div>
@@ -11261,16 +11229,13 @@ As shown in the tables, we computed the hashes for every table separately. All t
 <div class="highlight hl-ipython3"><pre><span></span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
 <span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
 
-<span class="c1"># CSV-Datei laden</span>
 <span class="n">file_path</span> <span class="o">=</span> <span class="s1">'../evaluation/results_scale_up_retrieval.csv'</span>
 <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
 
-<span class="c1"># Daten konvertieren: Fehlerhafte oder nicht-numerische Werte behandeln</span>
 <span class="n">df</span><span class="p">[</span><span class="s1">'total_correct_queries'</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_numeric</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">'total_correct_queries'</span><span class="p">],</span> <span class="n">errors</span><span class="o">=</span><span class="s1">'coerce'</span><span class="p">)</span>
 <span class="n">df</span><span class="p">[</span><span class="s1">'average_query_time'</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_numeric</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">'average_query_time'</span><span class="p">],</span> <span class="n">errors</span><span class="o">=</span><span class="s1">'coerce'</span><span class="p">)</span>
 <span class="n">df</span><span class="p">[</span><span class="s1">'hash_size_in_memory'</span><span class="p">]</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">to_numeric</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">'hash_size_in_memory'</span><span class="p">],</span> <span class="n">errors</span><span class="o">=</span><span class="s1">'coerce'</span><span class="p">)</span>
 
-<span class="c1"># Plot 1: Range vs. Hash Size in Memory</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">'index_range'</span><span class="p">],</span> <span class="n">df</span><span class="p">[</span><span class="s1">'hash_size_in_memory'</span><span class="p">],</span> <span class="n">marker</span><span class="o">=</span><span class="s1">'o'</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">'Hash Size in Memory'</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">'Index Range vs. Hash Size in Memory'</span><span class="p">)</span>
@@ -11281,7 +11246,6 @@ As shown in the tables, we computed the hashes for every table separately. All t
 <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 
-<span class="c1"># Plot 2: Range vs. Average Query Time</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s1">'index_range'</span><span class="p">],</span> <span class="n">df</span><span class="p">[</span><span class="s1">'average_query_time'</span><span class="p">],</span> <span class="n">marker</span><span class="o">=</span><span class="s1">'o'</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">'orange'</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">'Average Query Time'</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s1">'Index Range vs. Average Query Time'</span><span class="p">)</span>
